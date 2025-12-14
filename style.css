@@ -1,0 +1,29 @@
+.lca-avatar-wrapper {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.lca-avatar-wrapper label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.lca-note {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+#lca-preview img {
+    margin-top: 10px;
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
