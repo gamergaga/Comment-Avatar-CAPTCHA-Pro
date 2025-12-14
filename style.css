@@ -1,29 +1,92 @@
 .lca-avatar-wrapper {
-    margin: 15px 0;
-    padding: 15px;
-    background: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    margin: 16px 0;
+    padding: 16px;
+    background: #f9fafb;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.lca-avatar-wrapper label {
-    display: block;
+.lca-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+}
+
+.lca-title {
+    margin: 0;
+    font-weight: 700;
+    color: #111827;
+    font-size: 16px;
+}
+
+.lca-helper {
+    margin: 0;
+    color: #4b5563;
+    font-size: 13px;
+}
+
+.lca-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lca-input:hover,
+.lca-input:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.lca-input input[type="file"] {
+    flex: 0 0 auto;
+}
+
+.lca-input__hint {
+    color: #1f2937;
     font-weight: 600;
-    margin-bottom: 8px;
+    font-size: 14px;
 }
 
-.lca-note {
-    font-size: 0.85em;
-    color: #666;
-    margin-top: 5px;
+.lca-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.lca-preview {
+    min-height: 64px;
+}
+
+.lca-feedback {
+    color: #374151;
+    font-size: 13px;
+}
+
+.lca-feedback.is-error {
+    color: #b91c1c;
+    font-weight: 600;
 }
 
 #lca-preview img {
-    margin-top: 10px;
     width: 64px;
     height: 64px;
     object-fit: cover;
     border-radius: 50%;
     border: 2px solid #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.lca-note {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 10px 0 0;
 }

@@ -2,7 +2,7 @@
 /*
 Plugin Name: Local Comment Avatars
 Description: Allows users and guests to upload a Display Picture (DP) while commenting. Overrides Gravatar.
-Version: 1.0
+Version: 1.1
 Author: Gemini
 */
 
@@ -12,20 +12,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Local_Comment_Avatars {
 
+    /**
+     * Holds the latest uploaded attachment ID for the current request.
+     *
+     * @var int|null
+     */
+    protected $uploaded_id = null;
+
     public function __construct() {
         // 1. Add File Field to Comment Form
         add_action( 'comment_form_logged_in_after', array( $this, 'add_avatar_field' ) );
         add_action( 'comment_form_after_fields', array( $this, 'add_avatar_field' ) );
+        add_action( 'comment_form', array( $this, 'ensure_multipart_form' ) );
 
         // 2. Handle File Upload on Submission
         add_action( 'preprocess_comment', array( $this, 'handle_file_upload' ) );
-        
+
         // 3. Save Attachment ID to Meta
         add_action( 'comment_post', array( $this, 'save_avatar_meta' ), 10, 2 );
 
         // 4. Override Gravatar
         add_filter( 'pre_get_avatar_data', array( $this, 'override_gravatar' ), 10, 2 );
-        
+
         // 5. Enqueue JS/CSS
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ) );
     }
@@ -36,10 +44,23 @@ class Local_Comment_Avatars {
     public function add_avatar_field() {
         ?>
         <div class="lca-avatar-wrapper">
-            <label for="lca-upload"><?php _e( 'Upload a Photo (Optional)', 'lca' ); ?></label>
-            <input type="file" name="lca-upload" id="lca-upload" accept="image/png, image/jpeg, image/gif" />
-            <div id="lca-preview"></div>
-            <p class="lca-note">Allowed: JPG, PNG, GIF. Max 2MB.</p>
+            <div class="lca-heading">
+                <p class="lca-title"><?php esc_html_e( 'Add a profile photo', 'lca' ); ?></p>
+                <p class="lca-helper"><?php esc_html_e( 'Optional — looks great next to your comment.', 'lca' ); ?></p>
+            </div>
+
+            <label class="lca-input" for="lca-upload">
+                <input type="file" name="lca-upload" id="lca-upload" accept="image/png, image/jpeg, image/gif" />
+                <span class="lca-input__hint"><?php esc_html_e( 'Drag & drop or browse an image', 'lca' ); ?></span>
+            </label>
+
+            <div class="lca-preview-row">
+                <div id="lca-preview" class="lca-preview" aria-live="polite" aria-atomic="true"></div>
+                <div id="lca-feedback" class="lca-feedback" role="status" aria-live="polite"></div>
+            </div>
+
+            <p class="lca-note"><?php esc_html_e( 'Allowed: JPG, PNG, GIF. Max 2MB. Square images work best.', 'lca' ); ?></p>
+            <?php wp_nonce_field( 'lca-upload', 'lca_nonce' ); ?>
         </div>
         <?php
     }
@@ -48,37 +69,55 @@ class Local_Comment_Avatars {
      * Validates and uploads the file to WP Media Library.
      */
     public function handle_file_upload( $commentdata ) {
-        if ( ! isset( $_FILES['lca-upload'] ) || empty( $_FILES['lca-upload']['name'] ) ) {
+        // Reset any previously set attachment for this request.
+        $this->uploaded_id = null;
+
+        if ( empty( $_FILES['lca-upload']['name'] ) ) {
             return $commentdata;
+        }
+
+        if ( ! isset( $_POST['lca_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lca_nonce'] ) ), 'lca-upload' ) ) {
+            wp_die( esc_html__( 'Security check failed. Please try again.', 'lca' ) );
         }
 
         $file = $_FILES['lca-upload'];
 
-        // Security: Validate File Type
+        if ( ! isset( $file['error'] ) || UPLOAD_ERR_OK !== (int) $file['error'] ) {
+            $message = __( 'Upload failed. Please try again.', 'lca' );
+
+            if ( isset( $file['error'] ) && UPLOAD_ERR_INI_SIZE === (int) $file['error'] ) {
+                $message = __( 'Error: The uploaded file exceeds the maximum size allowed by the server.', 'lca' );
+            }
+
+            wp_die( esc_html( $message ) );
+        }
+
+        // Security: Validate File Type and Extension
         $allowed = array( 'image/jpeg', 'image/png', 'image/gif' );
-        if ( ! in_array( $file['type'], $allowed ) ) {
-            wp_die( 'Error: Only JPG, PNG, and GIF images are allowed.' );
+        $checked = wp_check_filetype_and_ext( $file['tmp_name'], $file['name'] );
+
+        if ( empty( $checked['type'] ) || ! in_array( $checked['type'], $allowed, true ) ) {
+            wp_die( esc_html__( 'Error: Only JPG, PNG, and GIF images are allowed.', 'lca' ) );
         }
 
         // Security: Validate File Size (2MB)
         if ( $file['size'] > 2 * 1024 * 1024 ) {
-            wp_die( 'Error: Image size must be less than 2MB.' );
+            wp_die( esc_html__( 'Error: Image size must be less than 2MB.', 'lca' ) );
         }
 
         // WordPress Media Handling
-        require_once( ABSPATH . 'wp-admin/includes/image.php' );
-        require_once( ABSPATH . 'wp-admin/includes/file.php' );
-        require_once( ABSPATH . 'wp-admin/includes/media.php' );
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/media.php';
 
-        $attachment_id = media_handle_upload( 'lca-upload', 0 );
+        $attachment_id = media_handle_upload( 'lca-upload', 0, array(), array( 'test_form' => false ) );
 
         if ( is_wp_error( $attachment_id ) ) {
-            wp_die( 'Upload Error: ' . $attachment_id->get_error_message() );
+            wp_die( esc_html( sprintf( __( 'Upload Error: %s', 'lca' ), $attachment_id->get_error_message() ) ) );
         }
 
-        // Store ID in a global variable to access it in the 'comment_post' hook
-        global $lca_uploaded_id;
-        $lca_uploaded_id = $attachment_id;
+        // Store ID for access in the 'comment_post' hook
+        $this->uploaded_id = $attachment_id;
 
         return $commentdata;
     }
@@ -87,16 +126,14 @@ class Local_Comment_Avatars {
      * Links the uploaded image to the Comment and the User (if logged in).
      */
     public function save_avatar_meta( $comment_id, $comment_approved ) {
-        global $lca_uploaded_id;
-
-        if ( isset( $lca_uploaded_id ) && $lca_uploaded_id ) {
+        if ( $this->uploaded_id ) {
             // Save to Comment Meta (So this specific comment has the pic)
-            add_comment_meta( $comment_id, 'lca_avatar_id', $lca_uploaded_id );
+            add_comment_meta( $comment_id, 'lca_avatar_id', $this->uploaded_id );
 
             // If user is logged in, save to User Meta (So they keep this pic for future)
             $user_id = get_current_user_id();
             if ( $user_id ) {
-                update_user_meta( $user_id, 'lca_profile_pic', $lca_uploaded_id );
+                update_user_meta( $user_id, 'lca_profile_pic', $this->uploaded_id );
             }
         }
     }
@@ -145,10 +182,14 @@ class Local_Comment_Avatars {
         return $args;
     }
 
+    public function ensure_multipart_form() {
+        echo '<script>(function(){var f=document.getElementById("commentform");if(f){f.enctype="multipart/form-data";f.encoding="multipart/form-data";}})();</script>';
+    }
+
     public function enqueue_assets() {
         if ( is_singular() && comments_open() ) {
-            wp_enqueue_script( 'lca-js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.0', true );
-            wp_enqueue_style( 'lca-css', plugin_dir_url( __FILE__ ) . 'style.css' );
+            wp_enqueue_script( 'lca-js', plugin_dir_url( __FILE__ ) . 'script.js', array( 'jquery' ), '1.1', true );
+            wp_enqueue_style( 'lca-css', plugin_dir_url( __FILE__ ) . 'style.css', array(), '1.1' );
         }
     }
 }
