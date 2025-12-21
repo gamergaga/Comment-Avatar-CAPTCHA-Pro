@@ -1,0 +1,81 @@
+/* Container */
+.cacp-container {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+    clear: both;
+}
+
+/* Dropzone Label */
+.cacp-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    border: 2px dashed #ccc;
+    background: #f9f9f9;
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.cacp-dropzone:hover {
+    background: #f0f6fc;
+    border-color: #0073aa;
+}
+
+.cacp-txt {
+    font-size: 13px;
+    color: #666;
+    margin-top: 5px;
+}
+
+/* NUCLEAR FIX: Completely hide the actual file input */
+#cacp-file-input {
+    display: none;
+}
+
+/* Preview Area */
+.cacp-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #fff;
+}
+
+.cacp-preview img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.cacp-remove {
+    margin-left: auto;
+    color: red;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Badges */
+.cacp-admin-badge {
+    display: inline-block;
+    background-color: #0073aa;
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: middle;
+    text-transform: uppercase;
+}
