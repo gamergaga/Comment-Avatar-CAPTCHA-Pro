@@ -30,11 +30,36 @@ class CACP_Admin {
 
     public function register_settings() {
         // Registering our settings group
-        register_setting( 'cacp_options_group', 'cacp_captcha_provider' );
-        register_setting( 'cacp_options_group', 'cacp_site_key' );
-        register_setting( 'cacp_options_group', 'cacp_secret_key' );
-        register_setting( 'cacp_options_group', 'cacp_enable_bio' );
-        register_setting( 'cacp_options_group', 'cacp_enable_count' );
+        register_setting(
+    'cacp_options_group',
+    'cacp_captcha_provider',
+    array( 'sanitize_callback' => 'sanitize_text_field' )
+);
+
+register_setting(
+    'cacp_options_group',
+    'cacp_site_key',
+    array( 'sanitize_callback' => 'sanitize_text_field' )
+);
+
+register_setting(
+    'cacp_options_group',
+    'cacp_secret_key',
+    array( 'sanitize_callback' => 'sanitize_text_field' )
+);
+
+register_setting(
+    'cacp_options_group',
+    'cacp_enable_bio',
+    array( 'sanitize_callback' => 'absint' )
+);
+
+register_setting(
+    'cacp_options_group',
+    'cacp_enable_count',
+    array( 'sanitize_callback' => 'absint' )
+);
+
     }
 
     public function render_settings_page() {
